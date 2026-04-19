@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DisnPerfo — Top Figurines Disney Traditions</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>DisnPerfo</h1>
+        <p class="subtitle">Top 5 des figurines Disney Traditions les plus populaires</p>
+    </header>
+
+    <main>
+        <div class="controls">
+            <span id="last-updated">Chargement...</span>
+            <button id="refresh-btn" onclick="refreshData()">Rafraîchir</button>
+        </div>
+
+        <div class="grid">
+            <section class="source-card">
+                <h2>Amazon.com.be</h2>
+                <div id="amazon-list" class="product-list">
+                    <p class="loading">Chargement des données...</p>
+                </div>
+            </section>
+
+            <section class="source-card">
+                <h2>CadeauCity.com</h2>
+                <div id="cadeaucity-list" class="product-list">
+                    <p class="loading">Chargement des données...</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <p>Données mises à jour automatiquement toutes les 6 heures</p>
+    </footer>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

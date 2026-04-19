@@ -1,0 +1,17 @@
+# Claude Code
+.claude/settings.local.json
+.claude/cache/
+CLAUDE.local.md
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
