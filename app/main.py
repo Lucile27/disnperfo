@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from dataclasses import asdict
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -89,7 +90,7 @@ async def get_top5():
     return {
         "amazon": [asdict(p) for p in amazon],
         "cadeaucity": [asdict(p) for p in cadeaucity],
-        "last_updated": datetime.now().strftime("%d/%m/%Y %H:%M"),
+        "last_updated": datetime.now(ZoneInfo("Europe/Brussels")).strftime("%d/%m/%Y %H:%M"),
     }
 
 
