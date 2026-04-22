@@ -58,7 +58,7 @@ try:
                 }
 
                 data.push({ name, href, img });
-                if (data.length >= 15) break;
+                if (data.length >= 10) break;
             }
             return data;
         }""")
@@ -69,8 +69,8 @@ try:
         for item in catalog:
             try:
                 pg = browser.new_page()
-                pg.goto(item["href"], wait_until="networkidle", timeout=30000)
-                pg.wait_for_timeout(2000)
+                pg.goto(item["href"], wait_until="domcontentloaded", timeout=20000)
+                pg.wait_for_timeout(1000)
 
                 detail = pg.evaluate(r"""() => {
                     const body = document.body.innerText;
@@ -158,7 +158,7 @@ def scrape_cadeaucity_top5() -> list[Product]:
         env["PYTHONIOENCODING"] = "utf-8"
         result = subprocess.run(
             [sys.executable, "-c", _SCRIPT],
-            capture_output=True, timeout=180, env=env,
+            capture_output=True, timeout=300, env=env,
         )
 
         stderr = result.stderr.decode("utf-8", errors="replace")
