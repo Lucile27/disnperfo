@@ -10,3 +10,4 @@ class Product:
     url: str
     image_url: str | None = None
     badge: str | None = None
+    kpi_score: float | None = None

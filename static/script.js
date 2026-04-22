@@ -49,6 +49,7 @@ function renderProducts(containerId, products) {
                     ${product.rating ? `<span class="product-rating">${renderStars(product.rating)} ${product.rating.toFixed(1)}</span>` : ""}
                     ${product.review_count ? `<span class="product-reviews">${product.review_count} avis</span>` : ""}
                     ${product.badge ? `<span class="badge">${product.badge}</span>` : ""}
+                    ${product.kpi_score != null ? `<span class="kpi-score">KPI: ${product.kpi_score}%</span>` : ""}
                 </div>
             </div>
         </div>

@@ -190,6 +190,15 @@ main {
     font-weight: 600;
 }
 
+.kpi-score {
+    background: #4a4ae0;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 3px;
+    font-weight: 700;
+}
+
 .no-data {
     text-align: center;
     padding: 2rem;

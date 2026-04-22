@@ -9,11 +9,16 @@ logger = logging.getLogger(__name__)
 
 _SCRIPT = r'''
 import json
-import re
 import sys
 from playwright.sync_api import sync_playwright
 
 SEARCH_URL = "https://www.amazon.com.be/s?k=Disney+Traditions+figurine"
+
+# KPI weights
+W_BADGE = 0.40
+W_POSITION = 0.35
+W_RATING = 0.15
+W_REVIEWS = 0.10
 
 products = []
 try:
@@ -34,8 +39,6 @@ try:
                 const item = items[i];
                 const text = item.innerText || '';
 
-                // Name: find the line that looks like a product name
-                // Skip badge lines like "N°1 des ventes", "Choix d'Amazon", etc.
                 const lines = text.split('\n').filter(l => l.trim());
                 let name = '';
                 for (const line of lines) {
@@ -48,19 +51,15 @@ try:
                 }
                 if (!name) continue;
 
-                // URL: first product link
                 const link = item.querySelector('a[href*="/dp/"]');
                 const href = link ? link.getAttribute('href') : '';
 
-                // Image
                 const img = item.querySelector('.s-image, img[data-image-latency="s-product-image"]');
                 const imgSrc = img ? img.src : '';
 
-                // Rating: pattern "X,X" before "étoile"
                 const ratingMatch = text.match(/(\d[,.]\d)\s*\n/);
                 const rating = ratingMatch ? parseFloat(ratingMatch[1].replace(',', '.')) : null;
 
-                // Review count: pattern "(3,3 k)" or "(372)"
                 const reviewMatch = text.match(/\(([0-9][0-9,.]*\s*k?)\)/i);
                 let reviewCount = 0;
                 if (reviewMatch) {
@@ -73,23 +72,40 @@ try:
                     }
                 }
 
-                // Price: pattern "XX,XX €"
                 const priceMatch = text.match(/(\d+[,.]\d{2})\s*\u20ac/);
                 const price = priceMatch ? priceMatch[1] + ' \u20ac' : '';
 
-                // Best seller badge
                 const badgeEl = item.querySelector('.a-badge-text');
                 const badge = badgeEl ? badgeEl.textContent.trim() : null;
 
-                results.push({ name, href, imgSrc, rating, reviewCount, price, badge });
+                results.push({ name, href, imgSrc, rating, reviewCount, price, badge, position: results.length + 1 });
             }
             return results;
         }""")
+
+        browser.close()
+
+        # Compute KPI scores
+        total = len(data)
+        max_reviews = max((d["reviewCount"] for d in data), default=1) or 1
 
         for item in data:
             href = item["href"]
             if href and not href.startswith("http"):
                 href = "https://www.amazon.com.be" + href
+
+            # Badge: 1.0 if present, 0.0 if not
+            s_badge = 1.0 if item["badge"] else 0.0
+            # Position: best (1) = 1.0, worst (total) = 0.0
+            s_position = (total - item["position"]) / max(total - 1, 1)
+            # Rating: normalized 0-5 to 0-1
+            s_rating = (item["rating"] / 5.0) if item["rating"] else 0.0
+            # Reviews: normalized relative to max
+            s_reviews = item["reviewCount"] / max_reviews
+
+            kpi = (W_BADGE * s_badge + W_POSITION * s_position
+                   + W_RATING * s_rating + W_REVIEWS * s_reviews)
+
             products.append({
                 "name": item["name"],
                 "price": item["price"],
@@ -98,13 +114,13 @@ try:
                 "url": href,
                 "image_url": item["imgSrc"] or None,
                 "badge": item["badge"],
+                "kpi_score": round(kpi * 100, 1),
             })
 
-        browser.close()
 except Exception as e:
     print(json.dumps({"error": str(e)}), file=sys.stderr)
 
-products.sort(key=lambda p: p["review_count"], reverse=True)
+products.sort(key=lambda p: p["kpi_score"], reverse=True)
 print(json.dumps(products[:5], ensure_ascii=False))
 '''
 
@@ -132,6 +148,7 @@ def scrape_amazon_top5() -> list[Product]:
                     name=d["name"], price=d["price"], rating=d["rating"],
                     review_count=d["review_count"], url=d["url"],
                     image_url=d["image_url"], badge=d["badge"],
+                    kpi_score=d.get("kpi_score"),
                 )
                 for d in data
             ]
