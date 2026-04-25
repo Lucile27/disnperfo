@@ -3,6 +3,17 @@ async function loadData() {
         const resp = await fetch("/api/top5");
         const data = await resp.json();
 
+        if (data.loading) {
+            document.getElementById("amazon-list").innerHTML =
+                '<p class="no-data">Demarrage en cours... Les donnees arrivent dans 1-2 minutes.</p>';
+            document.getElementById("cadeaucity-list").innerHTML =
+                '<p class="no-data">Demarrage en cours... Les donnees arrivent dans 1-2 minutes.</p>';
+            document.getElementById("last-updated").textContent = data.last_updated;
+            // Auto-retry after 30 seconds
+            setTimeout(loadData, 30000);
+            return;
+        }
+
         renderProducts("amazon-list", data.amazon);
         renderProducts("cadeaucity-list", data.cadeaucity);
 

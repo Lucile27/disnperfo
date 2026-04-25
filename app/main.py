@@ -25,13 +25,9 @@ async def refresh_data():
     logger.info("Refreshing data from sources...")
     loop = asyncio.get_event_loop()
 
-    # Run both scrapers in parallel threads
-    amazon_future = loop.run_in_executor(executor, scrape_amazon_top5)
-    cadeaucity_future = loop.run_in_executor(executor, scrape_cadeaucity_top5)
-
-    amazon_data, cadeaucity_data = await asyncio.gather(
-        amazon_future, cadeaucity_future, return_exceptions=True
-    )
+    # Run scrapers sequentially to avoid OOM on Render free tier (512MB)
+    amazon_data = await loop.run_in_executor(executor, scrape_amazon_top5)
+    cadeaucity_data = await loop.run_in_executor(executor, scrape_cadeaucity_top5)
 
     if isinstance(amazon_data, Exception):
         logger.error("Amazon scraper error: %s", amazon_data)
@@ -82,14 +78,19 @@ async def get_top5():
     amazon = get_cached("amazon")
     cadeaucity = get_cached("cadeaucity")
 
-    if amazon is None or cadeaucity is None:
-        await refresh_data()
-        amazon = get_cached("amazon") or []
-        cadeaucity = get_cached("cadeaucity") or []
+    if amazon is None and cadeaucity is None:
+        # Data not ready yet (cold start) — return empty with a loading flag
+        # The periodic_refresh task is already running in the background
+        return {
+            "amazon": [],
+            "cadeaucity": [],
+            "last_updated": "Chargement en cours... rechargez dans 1-2 minutes",
+            "loading": True,
+        }
 
     return {
-        "amazon": [asdict(p) for p in amazon],
-        "cadeaucity": [asdict(p) for p in cadeaucity],
+        "amazon": [asdict(p) for p in (amazon or [])],
+        "cadeaucity": [asdict(p) for p in (cadeaucity or [])],
         "last_updated": datetime.now(ZoneInfo("Europe/Brussels")).strftime("%d/%m/%Y %H:%M"),
     }
 
